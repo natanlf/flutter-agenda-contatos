@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_agenda_contatos/helpers/contact_helper.dart';
+import 'package:flutter_agenda_contatos/ui/contact_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -17,12 +18,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    helper.getAllContacts().then((value) => {
-      setState((){
-        contacts = value;
-      })
-    });
+    _getAllContacts();
   }
 
   @override
@@ -35,7 +31,9 @@ class _HomePageState extends State<HomePage> {
       ),
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          _showContactPage();
+        },
         child: Icon(Icons.add),
         backgroundColor: Colors.red,
       ),
@@ -63,7 +61,7 @@ class _HomePageState extends State<HomePage> {
                       image: contacts[index].img != null ?
                       FileImage(File(contacts[index].img)) :
                       AssetImage("images/avatar.jpg"),
-                    fit: BoxFit.cover
+                      fit: BoxFit.cover
                   )
                 ),
               ),
@@ -86,6 +84,30 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+      onTap: (){
+        _showContactPage(contact: contacts[index]);
+      },
     );
+  }
+
+  void _showContactPage({Contact contact}) async { //quando for criar não vai passar um contato, quando for editar passa o contato
+    final recContact = await Navigator.push(context, //recebe um contato da ContactPage, após salvar ou editar
+        MaterialPageRoute(builder: (context)=>ContactPage(contact: contact,)));
+    if(recContact != null) { //se houve criação ou edicão
+      if(contact != null){ //se o contact != null, quer dizer que enviamos um contato, então é edição
+        await helper.updateContact(recContact);
+      } else { //recebemos o contato mas não enviamos, então é criação
+        await helper.saveContact(recContact);
+      }
+      _getAllContacts();
+    }
+  }
+
+  void _getAllContacts() {
+    helper.getAllContacts().then((value) => {
+      setState((){
+        contacts = value;
+      })
+    });
   }
 }
