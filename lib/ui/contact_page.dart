@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_agenda_contatos/helpers/contact_helper.dart';
 
 class ContactPage extends StatefulWidget {
-
   final Contact contact;
 
   ContactPage({this.contact}); //entre chaves deixa o parâmetro opcional
@@ -14,7 +13,6 @@ class ContactPage extends StatefulWidget {
 }
 
 class _ContactPageState extends State<ContactPage> {
-
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -28,7 +26,8 @@ class _ContactPageState extends State<ContactPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    if(widget.contact == null) { //para acessar a variável de outra classe usamos o widget, pois representa a ContactPage
+    if (widget.contact == null) {
+      //para acessar a variável de outra classe usamos o widget, pois representa a ContactPage
       _editedContact = Contact(); //se não receber um contato, vamos criar um
     } else {
       _editedContact = Contact.fromMap(widget.contact.toMap());
@@ -40,7 +39,8 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope( //WillPopScope => chama uma função antes de tentar sair da tela
+        child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red,
         title: Text(_editedContact.name ?? "Novo Contato"),
@@ -48,8 +48,10 @@ class _ContactPageState extends State<ContactPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if(_editedContact.name != null && _editedContact.name.isNotEmpty) { //passa para a tela anterior o contato editado
-            Navigator.pop(context, _editedContact); //pop => volta para a tela anterior. Navigator = esquema de pilha
+          if (_editedContact.name != null && _editedContact.name.isNotEmpty) {
+            //passa para a tela anterior o contato editado
+            Navigator.pop(context,
+                _editedContact); //pop => volta para a tela anterior. Navigator = esquema de pilha
           } else {
             FocusScope.of(context).requestFocus(_nameFocus);
           }
@@ -68,19 +70,17 @@ class _ContactPageState extends State<ContactPage> {
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                        image: _editedContact.img != null ?
-                        FileImage(File(_editedContact.img)) :
-                        AssetImage("images/avatar.jpg"),
-                        fit: BoxFit.cover
-                    )
-                ),
+                        image: _editedContact.img != null
+                            ? FileImage(File(_editedContact.img))
+                            : AssetImage("images/avatar.jpg"),
+                        fit: BoxFit.cover)),
               ),
             ),
             TextField(
               controller: _nameController,
               focusNode: _nameFocus,
               decoration: InputDecoration(labelText: "Nome"),
-              onChanged: (text){
+              onChanged: (text) {
                 _userEdited = true;
                 setState(() {
                   _editedContact.name = text;
@@ -90,7 +90,7 @@ class _ContactPageState extends State<ContactPage> {
             TextField(
               controller: _emailController,
               decoration: InputDecoration(labelText: "Email"),
-              onChanged: (text){
+              onChanged: (text) {
                 _userEdited = true;
                 _editedContact.email = text;
               },
@@ -99,7 +99,7 @@ class _ContactPageState extends State<ContactPage> {
             TextField(
               controller: _phoneController,
               decoration: InputDecoration(labelText: "Phone"),
-              onChanged: (text){
+              onChanged: (text) {
                 _userEdited = true;
                 _editedContact.phone = text;
               },
@@ -108,6 +108,30 @@ class _ContactPageState extends State<ContactPage> {
           ],
         ),
       ),
-    );
+    ),
+    onWillPop: _requestPop);
+  }
+
+  Future<bool> _requestPop(){
+    if(_userEdited) { //se editou algo perguntar se quer descartar
+      showDialog(context: context, builder: (context){
+        return AlertDialog(
+          title: Text("Descartar Alterações?"),
+          content: Text("Se sair as alterações serão perdidas"),
+          actions: [
+            FlatButton(onPressed: (){ //tira o dialog
+              Navigator.pop(context);
+            }, child: Text("Cancelar")),
+            FlatButton(onPressed: (){
+              Navigator.pop(context); //tira o dialog
+              Navigator.pop(context); //tira contact_page
+            }, child: Text("Sim"))
+          ],
+        );
+      });
+      return Future.value(false); //não permite sair automaticamente da tela, caso modificou algo
+    } else {
+      return Future.value(true); //permite sair automaticamente da tela
+    }
   }
 }
