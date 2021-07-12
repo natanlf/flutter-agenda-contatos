@@ -5,6 +5,8 @@ import 'package:flutter_agenda_contatos/helpers/contact_helper.dart';
 import 'package:flutter_agenda_contatos/ui/contact_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+enum OrderOptions { orderaz, orderza }
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -29,6 +31,21 @@ class _HomePageState extends State<HomePage> {
         title: Text("Contatos"),
         backgroundColor: Colors.red,
         centerTitle: true,
+        actions: [
+          PopupMenuButton<OrderOptions>(
+            itemBuilder: (context) => <PopupMenuEntry<OrderOptions>>[
+              const PopupMenuItem(
+                child: Text("Ordenar de A-Z"),
+                value: OrderOptions.orderaz,
+              ),
+              const PopupMenuItem(
+                child: Text("Ordenando de Z-A"),
+                value: OrderOptions.orderza,
+              )
+            ],
+            onSelected: _orderList,
+          )
+        ],
       ),
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
@@ -38,16 +55,18 @@ class _HomePageState extends State<HomePage> {
         child: Icon(Icons.add),
         backgroundColor: Colors.red,
       ),
-      body: ListView.builder(padding: EdgeInsets.all(10.0),
+      body: ListView.builder(
+          padding: EdgeInsets.all(10.0),
           itemCount: contacts.length,
-          itemBuilder: (context,index){
+          itemBuilder: (context, index) {
             return _contactCard(context, index);
-      }),
+          }),
     );
   }
 
   Widget _contactCard(BuildContext context, int index) {
-    return GestureDetector( //usamos porque o card não permite evento de clique
+    return GestureDetector(
+      //usamos porque o card não permite evento de clique
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(10.0),
@@ -57,59 +76,62 @@ class _HomePageState extends State<HomePage> {
                 width: 80.0,
                 height: 80.0,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                      image: contacts[index].img != null ?
-                      FileImage(File(contacts[index].img)) :
-                      AssetImage("images/avatar.jpg"),
-                      fit: BoxFit.cover
-                  )
-                ),
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                        image: contacts[index].img != null
+                            ? FileImage(File(contacts[index].img))
+                            : AssetImage("images/avatar.jpg"),
+                        fit: BoxFit.cover)),
               ),
               Padding(
-                  padding: EdgeInsets.only(left: 10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(contacts[index].name ?? "",
-                      style: TextStyle(fontSize: 22.0,
-                          fontWeight: FontWeight.bold)),
-                      Text(contacts[index].email ?? "",
+                padding: EdgeInsets.only(left: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(contacts[index].name ?? "",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 22.0, fontWeight: FontWeight.bold)),
+                    Text(contacts[index].email ?? "",
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 18.0)),
-                      Text(contacts[index].phone ?? "",
+                    Text(contacts[index].phone ?? "",
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 18.0))
-                    ],
-                  ),
+                  ],
+                ),
               )
             ],
           ),
         ),
       ),
-      onTap: (){
+      onTap: () {
         _showOptions(context, index);
       },
     );
   }
 
-  void _showOptions(BuildContext context, int index){
+  void _showOptions(BuildContext context, int index) {
     showModalBottomSheet(
         context: context,
-        builder: (context){
+        builder: (context) {
           return BottomSheet(
-            onClosing: (){},
-            builder: (context){
+            onClosing: () {},
+            builder: (context) {
               return Container(
                 padding: EdgeInsets.all(10.0),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, //ocupa o mínimo de espaço possível no eixo principal
+                  mainAxisSize: MainAxisSize.min,
+                  //ocupa o mínimo de espaço possível no eixo principal
                   children: <Widget>[
                     Padding(
                       padding: EdgeInsets.all(10.0),
                       child: FlatButton(
-                        child: Text("Ligar",
+                        child: Text(
+                          "Ligar",
                           style: TextStyle(color: Colors.red, fontSize: 20.0),
                         ),
-                        onPressed: (){
+                        onPressed: () {
                           launch("tel:${contacts[index].phone}");
                           Navigator.pop(context);
                         },
@@ -118,10 +140,11 @@ class _HomePageState extends State<HomePage> {
                     Padding(
                       padding: EdgeInsets.all(10.0),
                       child: FlatButton(
-                        child: Text("Editar",
+                        child: Text(
+                          "Editar",
                           style: TextStyle(color: Colors.red, fontSize: 20.0),
                         ),
-                        onPressed: (){
+                        onPressed: () {
                           Navigator.pop(context); //fecha o BottomSheet
                           _showContactPage(contact: contacts[index]);
                         },
@@ -130,11 +153,13 @@ class _HomePageState extends State<HomePage> {
                     Padding(
                       padding: EdgeInsets.all(10.0),
                       child: FlatButton(
-                        child: Text("Excluir",
+                        child: Text(
+                          "Excluir",
                           style: TextStyle(color: Colors.red, fontSize: 20.0),
                         ),
-                        onPressed: (){
-                          helper.deleteContact(contacts[index].id); //remove do banco
+                        onPressed: () {
+                          helper.deleteContact(
+                              contacts[index].id); //remove do banco
                           setState(() {
                             contacts.removeAt(index); //remove da lista da tela
                             Navigator.pop(context);
@@ -147,17 +172,24 @@ class _HomePageState extends State<HomePage> {
               );
             },
           );
-        }
-    );
+        });
   }
 
-  void _showContactPage({Contact contact}) async { //quando for criar não vai passar um contato, quando for editar passa o contato
-    final recContact = await Navigator.push(context, //recebe um contato da ContactPage, após salvar ou editar
-        MaterialPageRoute(builder: (context)=>ContactPage(contact: contact,)));
-    if(recContact != null) { //se houve criação ou edicão
-      if(contact != null){ //se o contact != null, quer dizer que enviamos um contato, então é edição
+  void _showContactPage({Contact contact}) async {
+    //quando for criar não vai passar um contato, quando for editar passa o contato
+    final recContact = await Navigator.push(
+        context, //recebe um contato da ContactPage, após salvar ou editar
+        MaterialPageRoute(
+            builder: (context) => ContactPage(
+                  contact: contact,
+                )));
+    if (recContact != null) {
+      //se houve criação ou edicão
+      if (contact != null) {
+        //se o contact != null, quer dizer que enviamos um contato, então é edição
         await helper.updateContact(recContact);
-      } else { //recebemos o contato mas não enviamos, então é criação
+      } else {
+        //recebemos o contato mas não enviamos, então é criação
         await helper.saveContact(recContact);
       }
       _getAllContacts();
@@ -166,9 +198,23 @@ class _HomePageState extends State<HomePage> {
 
   void _getAllContacts() {
     helper.getAllContacts().then((value) => {
-      setState((){
-        contacts = value;
-      })
-    });
+          setState(() {
+            contacts = value;
+          })
+        });
+  }
+
+  void _orderList(OrderOptions result) {
+    switch (result) {
+      case OrderOptions.orderaz:
+        contacts.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+      case OrderOptions.orderza:
+        contacts.sort(
+            (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+        break;
+    }
+    setState(() {});
   }
 }
